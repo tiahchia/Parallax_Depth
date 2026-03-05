@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Atlantis Explorer</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,700;1,400&family=Montserrat:wght@300;600&display=swap');
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        :root {
+            --deep-blue: #001f3f;
+            --ocean-blue: #0074D9;
+            --aqua: #7FDBFF;
+            --bioluminescent: #39CCCC;
+            --sand: #F4E4C1;
+        }
+        
+        body {
+            background: linear-gradient(to bottom, #001f3f 0%, #000814 100%);
+            color: white;
+            font-family: 'Montserrat', sans-serif;
+            overflow-x: hidden;
+        }
+        
+        /* Parallax Layers */
+        .parallax-container {
+            position: relative;
+            height: 300vh;
+        }
+        
+        .parallax-layer {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            pointer-events: none;
+            will-change: transform;
+        }
+        
+        .layer-1 { z-index: 1; opacity: 0.3; } /* Far background */
+        .layer-2 { z-index: 2; opacity: 0.5; } /* Mid background */
+        .layer-3 { z-index: 3; opacity: 0.7; } /* Near background */
+        
+        /* Bubbles */
+        .bubble {
+            position: absolute;
+            background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.8), rgba(255,255,255,0.1));
+            border-radius: 50%;
+            animation: rise 15s infinite ease-in;
+            box-shadow: 0 0 10px rgba(127, 219, 255, 0.3);
+        }
+        
+        @keyframes rise {
+            0% {
+                transform: translateY(100vh) scale(0);
+                opacity: 0;
+            }
+            10% {
+                opacity: 1;
+            }
+            90% {
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(-100vh) scale(1.5);
+                opacity: 0;
+            }
+        }
+        
+        /* Bioluminescent Particles */
+        .plankton {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: var(--bioluminescent);
+            border-radius: 50%;
+            box-shadow: 0 0 10px var(--bioluminescent), 0 0 20px var(--bioluminescent);
+            animation: drift 20s infinite ease-in-out;
+        }
+        
+        @keyframes drift {
+            0%, 100% { transform: translate(0, 0); }
+            25% { transform: translate(100px, -50px); }
+            50% { transform: translate(-50px, -100px); }
+            75% { transform: translate(-100px, 50px); }
+        }
+        
+        /* Light Rays */
+        .light-ray {
+            position: absolute;
+            top: -20%;
+            width: 100px;
+            height: 150%;
+            background: linear-gradient(to bottom, rgba(255,255,255,0.1), transparent);
+            transform: rotate(15deg);
+            animation: sway 8s infinite ease-in-out;
+            filter: blur(20px);
+        }
+        
+        @keyframes sway {
+            0%, 100% { transform: rotate(15deg) translateX(0); opacity: 0.3; }
+            50% { transform: rotate(20deg) translateX(50px); opacity: 0.6; }
+        }
+        
+        /* Content */
+        .content {
+            position: relative;
+            z-index: 10;
+            padding: 4rem 5%;
+        }
+        
+        header {
+            text-align: center;
+            padding: 4rem 0;
+            position: relative;
+        }
+        
+        h1 {
+            font-family: 'Merriweather', serif;
+            font-size: clamp(3rem, 8vw, 6rem);
+            font-weight: 300;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            background: linear-gradient(to bottom, #fff, var(--aqua));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 1rem;
+            text-shadow: 0 0 40px rgba(127, 219, 255, 0.5);
+        }
+        
+        .subtitle {
+            font-size: 1.2rem;
+            color: var(--aqua);
+            letter-spacing: 0.3em;
+            opacity: 0.8;
+        }
+        
+        /* Depth Indicator */
+        .depth-meter {
+            position: fixed;
+            right: 2rem;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 100;
+            background: rgba(0, 31, 63, 0.8);
+            padding: 1rem;
+            border-radius: 30px;
+            border: 1px solid rgba(127, 219, 255, 0.3);
+            backdrop-filter: blur(10px);
+        }
+        
+        .depth-label {
+            writing-mode: vertical-rl;
+            text-orientation: mixed;
+            font-size: 0.8rem;
+            letter-spacing: 0.2em;
+            color: var(--aqua);
+            margin-bottom: 1rem;
+        }
+        
+        .depth-bar {
+            width: 4px;
+            height: 200px;
+            background: rgba(127, 219, 255, 0.2);
+            border-radius: 2px;
+            position: relative;
+            margin: 0 auto;
+        }
+        
+        .depth-fill {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(to top, var(--ocean-blue), var(--aqua));
+            border-radius: 2px;
+            transition: height 0.3s;
+            box-shadow: 0 0 10px var(--aqua);
+        }
+        
+        .depth-value {
+            text-align: center;
+            margin-top: 1rem;
+            font-family: 'Merriweather', serif;
+            font-size: 1.2rem;
+            color: white;
+        }
+        
+        /* Sections */
+        .section {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 4rem 0;
+        }
+        
+        .section-content {
+            max-width: 800px;
+            text-align: center;
+            background: rgba(0, 31, 63, 0.6);
+            padding: 3rem;
+            border-radius: 20px;
+            border: 1px solid rgba(127, 219, 255, 0.2);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+        }
+        
+        .section h2 {
+            font-family: 'Merriweather', serif;
+            font-size: 2.5rem;
+            margin-bottom: 1.5rem;
+            color: var(--aqua);
+        }
+        
+        .section p {
+            font-size: 1.1rem;
+            line-height: 1.8;
+            color: rgba(255,255,255,0.9);
+            margin-bottom: 1.5rem;
+        }
+        
+        /* Interactive Coral */
+        .coral-garden {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            margin-top: 2rem;
+            flex-wrap: wrap;
+        }
+        
+        .coral {
+            width: 100px;
+            height: 150px;
+            position: relative;
+            cursor: pointer;
+            transition: transform 0.3s;
+        }
+        
+        .coral:hover {
+            transform: scale(1.1);
+        }
+        
+        .coral-branch {
+            position: absolute;
+            bottom: 0;
+            width: 20px;
+            background: linear-gradient(to top, #ff6b6b, #ffd93d);
+            border-radius: 10px 10px 0 0;
+            transform-origin: bottom center;
+            transition: all 0.3s;
+            box-shadow: 0 0 20px rgba(255, 107, 107, 0.4);
+        }
+        
+        .coral:hover .coral-branch {
+            animation: sway-coral 2s ease-in-out infinite;
+        }
+        
+        @keyframes sway-coral {
+            0%, 100% { transform: rotate(-5deg); }
+            50% { transform: rotate(5deg); }
+        }
+        
+        /* Sonar Button */
+        .sonar-btn {
+            display: inline-block;
+            padding: 1rem 3rem;
+            background: radial-gradient(circle, var(--bioluminescent), var(--ocean-blue));
+            border: none;
+            border-radius: 50px;
+            color: white;
+            font-family: inherit;
+            font-size: 1rem;
+            letter-spacing: 0.2em;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s;
+            margin-top: 2rem;
+        }
+        
+        .sonar-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 40px var(--bioluminescent);
+        }
+        
+        .sonar-btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            background: rgba(255,255,255,0.3);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+        
+        .sonar-btn:active::before {
+            width: 300px;
+            height: 300px;
+        }
+        
+        /* Sonar Wave Effect */
+        .sonar-wave {
+            position: fixed;
+            border: 2px solid var(--aqua);
+            border-radius: 50%;
+            opacity: 0;
+            pointer-events: none;
+            z-index: 50;
+        }
+        
+        @keyframes sonar-ping {
+            0% {
+                width: 0;
+                height: 0;
+                opacity: 1;
+            }
+            100% {
+                width: 100vmax;
+                height: 100vmax;
+                opacity: 0;
+            }
+        }
+        
+        /* Treasure Chest */
+        .treasure {
+            width: 150px;
+            height: 120px;
+            background: linear-gradient(145deg, #8B4513, #D2691E);
+            margin: 2rem auto;
+            border-radius: 10px 10px 5px 5px;
+            position: relative;
+            cursor: pointer;
+            transition: transform 0.3s;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+        
+        .treasure:hover {
+            transform: translateY(-5px);
+        }
+        
+        .treasure-lid {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 40%;
+            background: linear-gradient(145deg, #A0522D, #CD853F);
+            border-radius: 10px 10px 0 0;
+            transform-origin: top;
+            transition: transform 0.5s;
+            border-bottom: 3px solid #8B4513;
+        }
+        
+        .treasure.open .treasure-lid {
+            transform: rotateX(-110deg);
+        }
+        
+        .treasure-glow {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 0;
+            height: 0;
+            background: radial-gradient(circle, gold, transparent);
+            border-radius: 50%;
+            opacity: 0;
+            transition: all 0.5s;
+        }
+        
+        .treasure.open .treasure-glow {
+            width: 200px;
+            height: 200px;
+            opacity: 0.6;
+        }
+        
+        .gem {
+            position: absolute;
+            font-size: 2rem;
+            opacity: 0;
+            transition: all 0.5s;
+        }
+        
+        .treasure.open .gem {
+            opacity: 1;
+        }
+        
+        .gem:nth-child(1) { top: 30%; left: 20%; transition-delay: 0.1s; }
+        .gem:nth-child(2) { top: 40%; left: 50%; transition-delay: 0.2s; }
+        .gem:nth-child(3) { top: 35%; left: 70%; transition-delay: 0.3s; }
+    </style>
+</head>
+<body>
+    <!-- Parallax Background Layers -->
+    <div class="parallax-layer layer-1" id="layer1"></div>
+    <div class="parallax-layer layer-2" id="layer2"></div>
+    <div class="parallax-layer layer-3" id="layer3"></div>
+    
+    <!-- Depth Meter -->
+    <div class="depth-meter">
+        <div class="depth-label">DEPTH</div>
+        <div class="depth-bar">
+            <div class="depth-fill" id="depthFill"></div>
+        </div>
+        <div class="depth-value" id="depthValue">0m</div>
+    </div>
+    
+    <div class="parallax-container">
+        <div class="content">
+            <header>
+                <h1>Atlantis</h1>
+                <p class="subtitle">Discover the Lost City</p>
+            </header>
+            
+            <section class="section" data-depth="200">
+                <div class="section-content">
+                    <h2>The Shallows</h2>
+                    <p>Where sunlight still penetrates the crystal waters, ancient ruins begin to emerge from the sandy depths. Coral gardens thrive in the warm currents.</p>
+                    <div class="coral-garden">
+                        <div class="coral" onclick="interactCoral(this)">
+                            <div class="coral-branch" style="height: 100%; left: 40%;"></div>
+                            <div class="coral-branch" style="height: 70%; left: 20%; transform: rotate(-20deg);"></div>
+                            <div class="coral-branch" style="height: 80%; left: 60%; transform: rotate(20deg);"></div>
+                        </div>
+                        <div class="coral" onclick="interactCoral(this)">
+                            <div class="coral-branch" style="height: 90%; left: 30%; background: linear-gradient(to top, #9b59b6, #e74c3c);"></div>
+                            <div class="coral-branch" style="height: 60%; left: 50%; transform: rotate(15deg); background: linear-gradient(to top, #9b59b6, #e74c3c);"></div>
+                        </div>
+                        <div class="coral" onclick="interactCoral(this)">
+                            <div class="coral-branch" style="height: 85%; left: 35%; background: linear-gradient(to top, #2ecc71, #f1c40f);"></div>
+                            <div class="coral-branch" style="height: 75%; left: 55%; transform: rotate(-15deg); background: linear-gradient(to top, #2ecc71, #f1c40f);"></div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+            <section class="section" data-depth="800">
+                <div class="section-content">
+                    <h2>The Abyssal Zone</h2>
+                    <p>Bioluminescent creatures illuminate the darkness. Here, the ancient treasures of Atlantis rest, waiting to be discovered by brave explorers.</p>
+                    
+                    <div class="treasure" id="treasure" onclick="toggleTreasure()">
+                        <div class="treasure-lid"></div>
+                        <div class="treasure-glow"></div>
+                        <div class="gem">💎</div>
+                        <div class="gem">👑</div>
+                        <div class="gem">💍</div>
+                    </div>
+                    
+                    <button class="sonar-btn" onclick="activateSonar()">ACTIVATE SONAR</button>
+                </div>
+            </section>
+            
+            <section class="section" data-depth="1500">
+                <div class="section-content">
+                    <h2>The Deep Trench</h2>
+                    <p>At the ocean's floor, pressure is immense and mysteries are endless. Strange formations and unknown species inhabit this eternal darkness.</p>
+                    <p style="font-size: 0.9rem; opacity: 0.7; margin-top: 2rem;">Scroll to explore deeper...</p>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <script>
+        // Generate bubbles for each layer
+        function createBubbles(container, count, minSize, maxSize, speed) {
+            for (let i = 0; i < count; i++) {
+                const bubble = document.createElement('div');
+                bubble.className = 'bubble';
+                const size = Math.random() * (maxSize - minSize) + minSize;
+                bubble.style.width = size + 'px';
+                bubble.style.height = size + 'px';
+                bubble.style.left = Math.random() * 100 + '%';
+                bubble.style.animationDuration = (Math.random() * speed + speed) + 's';
+                bubble.style.animationDelay = Math.random() * 5 + 's';
+                container.appendChild(bubble);
+            }
+        }
+        
+        // Generate plankton
+        function createPlankton(container, count) {
+            for (let i = 0; i < count; i++) {
+                const p = document.createElement('div');
+                p.className = 'plankton';
+                p.style.left = Math.random() * 100 + '%';
+                p.style.top = Math.random() * 100 + '%';
+                p.style.animationDelay = Math.random() * 5 + 's';
+                p.style.animationDuration = (15 + Math.random() * 10) + 's';
+                container.appendChild(p);
+            }
+        }
+        
+        // Generate light rays
+        function createLightRays(container) {
+            for (let i = 0; i < 3; i++) {
+                const ray = document.createElement('div');
+                ray.className = 'light-ray';
+                ray.style.left = (20 + i * 30) + '%';
+                ray.style.animationDelay = (i * 2) + 's';
+                container.appendChild(ray);
+            }
+        }
+        
+        const layer1 = document.getElementById('layer1');
+        const layer2 = document.getElementById('layer2');
+        const layer3 = document.getElementById('layer3');
+        
+        createBubbles(layer1, 20, 10, 30, 10);
+        createBubbles(layer2, 15, 20, 50, 15);
+        createBubbles(layer3, 10, 30, 80, 20);
+        createPlankton(layer2, 30);
+        createPlankton(layer3, 20);
+        createLightRays(layer1);
+        
+        // Parallax scroll effect
+        window.addEventListener('scroll', () => {
+            const scrolled = window.pageYOffset;
+            const maxScroll = document.body.scrollHeight - window.innerHeight;
+            const scrollPercent = scrolled / maxScroll;
+            
+            layer1.style.transform = `translateY(${scrolled * 0.2}px)`;
+            layer2.style.transform = `translateY(${scrolled * 0.5}px)`;
+            layer3.style.transform = `translateY(${scrolled * 0.8}px)`;
+            
+            // Update depth meter
+            const depth = Math.floor(scrollPercent * 2000);
+            document.getElementById('depthValue').textContent = depth + 'm';
+            document.getElementById('depthFill').style.height = (scrollPercent * 100) + '%';
+            
+            // Change color based on depth
+            if (depth > 1000) {
+                document.getElementById('depthFill').style.background = 'linear-gradient(to top, #000, #001f3f)';
+            } else if (depth > 500) {
+                document.getElementById('depthFill').style.background = 'linear-gradient(to top, #001f3f, #0074D9)';
+            }
+        });
+        
+        // Coral interaction
+        function interactCoral(coral) {
+            coral.style.transform = 'scale(1.2)';
+            setTimeout(() => {
+                coral.style.transform = 'scale(1.1)';
+            }, 200);
+            
+            // Create bubble burst
+            for (let i = 0; i < 5; i++) {
+                const bubble = document.createElement('div');
+                bubble.className = 'bubble';
+                bubble.style.width = '10px';
+                bubble.style.height = '10px';
+                bubble.style.left = '50%';
+                bubble.style.top = '0';
+                bubble.style.animationDuration = '2s';
+                coral.appendChild(bubble);
+                setTimeout(() => bubble.remove(), 2000);
+            }
+        }
+        
+        // Treasure toggle
+        function toggleTreasure() {
+            const treasure = document.getElementById('treasure');
+            treasure.classList.toggle('open');
+        }
+        
+        // Sonar effect
+        function activateSonar() {
+            const wave = document.createElement('div');
+            wave.className = 'sonar-wave';
+            wave.style.left = '50%';
+            wave.style.top = '50%';
+            wave.style.transform = 'translate(-50%, -50%)';
+            wave.style.animation = 'sonar-ping 2s ease-out';
+            document.body.appendChild(wave);
+            
+            setTimeout(() => wave.remove(), 2000);
+            
+            // Reveal hidden elements temporarily
+            document.querySelectorAll('.plankton').forEach(p => {
+                p.style.boxShadow = '0 0 30px var(--bioluminescent)';
+                setTimeout(() => {
+                    p.style.boxShadow = '0 0 10px var(--bioluminescent), 0 0 20px var(--bioluminescent)';
+                }, 2000);
+            });
+        }
+    </script>
+</body>
+</html>
